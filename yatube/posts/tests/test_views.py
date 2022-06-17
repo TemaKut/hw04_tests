@@ -75,25 +75,33 @@ class ContextView(TestCase):
         )
 
         # Ниже создам 16 записей в БД...
-        cls.posts_db = Post.objects.bulk_create(
-            [
-                Post(text="Test text", author=cls.user_n, group=cls.group),
-                Post(text="Test text2", author=cls.user_n, group=cls.group),
-                Post(text="Test text3", author=cls.user_n, group=cls.group),
-                Post(text="Test text4", author=cls.user_n, group=cls.group),
-                Post(text="Test text5", author=cls.user, group=cls.group),
-                Post(text="Test text6", author=cls.user, group=cls.group),
-                Post(text="Test text7", author=cls.user, group=cls.group),
-                Post(text="Test text8", author=cls.user, group=cls.group),
-                Post(text="Test text9", author=cls.user, group=cls.group),
-                Post(text="Test text10", author=cls.user, group=cls.group),
-                Post(text="Test text11", author=cls.user, group=cls.group),
-                Post(text="Test text12", author=cls.user, group=cls.group),
-                Post(text="Test text13", author=cls.user),
-                Post(text="Test text14", author=cls.user),
-                Post(text="Test text15", author=cls.user),
-            ]
-        )
+        Post.objects.create(
+            text="Test text", author=cls.user_n, group=cls.group),
+        Post.objects.create(text="Test text2",
+                            author=cls.user_n, group=cls.group),
+        Post.objects.create(text="Test text3",
+                            author=cls.user_n, group=cls.group),
+        Post.objects.create(text="Test text4",
+                            author=cls.user_n, group=cls.group),
+        Post.objects.create(text="Test text5",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text6",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text7",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text8",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text9",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text10",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text11",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text12",
+                            author=cls.user, group=cls.group),
+        Post.objects.create(text="Test text13", author=cls.user),
+        Post.objects.create(text="Test text14", author=cls.user),
+        Post.objects.create(text="Test text15", author=cls.user),
 
     def setUp(self):
         """Создаём модель пользователя."""
@@ -103,9 +111,10 @@ class ContextView(TestCase):
     def test_index_context(self):
         """Index сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:home'))
-        first_object = response.context['page_obj'][0]
-        task_text_0 = first_object.text
-        self.assertEqual(task_text_0, 'Test text')
+        first_obj = response.context['page_obj'].object_list[0]
+        post_text_0 = first_obj.text
+        post_author_0 = first_obj.author
+        self.assertIsInstance(post_text_0, str)
 
     def test_index_paginator(self):
         """Работоспособность паджинатора главной страницы."""

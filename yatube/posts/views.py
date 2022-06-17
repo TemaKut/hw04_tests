@@ -9,7 +9,7 @@ from .utils import paginator
 
 def _get_post_objects():
     """Получаем объекты модели пост."""
-    result = Post.objects.all()
+    result = Post.objects.select_related('author', 'group').all()
 
     return result
 
@@ -77,7 +77,7 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     """Страница редактирования созданного ранее поста."""
-    post_obj = Post.objects.get(id=post_id)
+    post_obj = Post.objects.select_related('author', 'group').get(id=post_id)
     form = PostForm(request.POST or None, instance=post_obj)
     if request.user == post_obj.author and post_obj:
         if request.method == 'POST' and form.is_valid():

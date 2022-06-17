@@ -42,10 +42,13 @@ class Post(models.Model):
         null=True,
         verbose_name='Группа',
         help_text='Группа, к которой будет относиться пост',
+
     )
 
     class Meta:
         ordering = ('-pub_date',)
+        verbose_name = "Пост"
+        verbose_name_plural = "Список постов"
 
     def __str__(self):
         return self.text[:POST_NUM]
