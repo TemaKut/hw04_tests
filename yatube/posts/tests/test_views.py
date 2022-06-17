@@ -113,7 +113,6 @@ class ContextView(TestCase):
         response = self.authorized_client.get(reverse('posts:home'))
         first_obj = response.context['page_obj'].object_list[0]
         post_text_0 = first_obj.text
-        post_author_0 = first_obj.author
         self.assertIsInstance(post_text_0, str)
 
     def test_index_paginator(self):
