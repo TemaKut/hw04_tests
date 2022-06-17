@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Главная страница сайта YaTube{% endblock %}
+{% block content %}
+<main>
+  <div class="container py-5">
+    <h1>Последние обновления на сайте</h1>
+    {% for post in page_obj %}
+     {% include 'posts/includes/post_info.html' %} 
+    {% endfor %}
+  </div>
+</main>
+{% include 'posts/includes/paginator.html' %} {% endblock %}

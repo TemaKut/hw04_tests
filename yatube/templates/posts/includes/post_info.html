@@ -1,0 +1,28 @@
+{% with request.resolver_match.view_name as view_name %}
+
+<article>
+  <ul>
+    <li>
+      Автор: {{ post.author.get_full_name }}
+      {% if view_name != 'posts:profile' %}
+        <a href="{% url 'posts:profile' post.author.username %}">Все посты пользователя</a>
+      {% endif %}
+    </li>
+    <li>Дата публикации: {{ post.pub_date|date:"d E Y" }}</li>
+  </ul>
+  <p>{{ post.text|linebreaks }}</p>
+
+  <a href="{% url 'posts:post_detail' post.id %}">Подробная информация о посте..</a>
+
+</article>
+{% if view_name != 'posts:group' %}
+    {% if post.group %}
+    <a href="{% url 'posts:group' post.group.slug %}">Все записи группы</a>
+    {% endif %}
+{% endif %}
+
+{% if not forloop.last %}
+  <hr />
+{% endif %}
+
+{% endwith %}
