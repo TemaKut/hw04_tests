@@ -48,7 +48,8 @@ class TestFormEfficiency(TestCase):
         self.assertEqual(author, 'Artem')
 
     def test_post_edit_by_author(self):
-        """Происходит ли изменение поста авторизованным автором в базе данных."""
+        """Происходит ли изменение поста
+        авторизованным автором в базе данных."""
         Post.objects.create(
             text="Test text",
             author=self.user,
