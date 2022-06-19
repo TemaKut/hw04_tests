@@ -19,24 +19,25 @@ class PostModelTest(TestCase):
             description='TestDescription',
         )
         cls.post = Post.objects.create(
-            text='а' * 15,
+            text='а' * 30,
             author=cls.user,
         )
 
-    def test_post_model_str(self):
-        """Корректность работы __str__ поста."""
+    def test_str_post_and_group(self):
+        """Корректность отображения метода str при обращении
+        к модели post и group."""
         post = PostModelTest.post
-        text_post = post.text
-        self.assertEqual(text_post, str(post), 'Работает некорректно!')
-
-    def test_group_model(self):
-        """Корректность работы __str__ группы."""
         group = PostModelTest.group
-        gtoup_title = group.title
-        self.assertEqual(gtoup_title, str(group),
-                         'Что-то не так с отображением группы')
+        group_title = group.title
+        fields_str = {
+            'а' * 15: str(post),
+            group_title: str(group),
+        }
+        for field, str_ in fields_str.items():
+            with self.subTest(field=field):
+                self.assertEqual(field, str_)
 
-    def test_post_verbowses(self):
+    def test_post_verbose_name(self):
         """Тест на наличие VN в посте."""
         post = PostModelTest.post
         field_verboses = {

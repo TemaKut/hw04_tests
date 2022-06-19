@@ -8,30 +8,24 @@ from posts.models import Post, Group
 User = get_user_model()
 
 
-class TestFormCreate(TestCase):
+class TestFormEfficiency(TestCase):
     """Проверяем формы."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='Artem')
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
         cls.group = Group.objects.create(
             title="Test title",
             slug="TestSlug",
             description="Test description",
         )
-        cls.post = Post.objects.create(
-            text="Test text",
-            author=cls.user,
-        )
 
-    def setUp(self):
-        """Создаём пользователя."""
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-
-    def test_create_post(self):
-        """Проверяем создала ли форма запись в БД."""
+    def test_post_create_by_authorized_user(self):
+        """Проверяем возможность создания поста
+        авторизованным пользователем запись в БД."""
         post_count = Post.objects.count()
         form_data = {
             'text': 'Test Text',
@@ -45,18 +39,23 @@ class TestFormCreate(TestCase):
         self.assertRedirects(response, reverse(
             'posts:profile', kwargs={'username': 'Artem'}))
         self.assertEqual(Post.objects.count(), post_count + 1)
-        self.assertTrue(
-            Post.objects.filter(
-                text='Test Text',
-                group=self.group,
-            ).exists()
-        )
+        object_post = Post.objects.get(id=1)
+        text = object_post.text
+        group = object_post.group
+        author = object_post.author.username
+        self.assertEqual(text, 'Test Text')
+        self.assertEqual(group, self.group)
+        self.assertEqual(author, 'Artem')
 
-    def test_post_edit(self):
-        """Происходит изменение поста с post_id в базе данных."""
+    def test_post_edit_by_author(self):
+        """Происходит ли изменение поста авторизованным автором в базе данных."""
+        Post.objects.create(
+            text="Test text",
+            author=self.user,
+        )
         post_count = Post.objects.count()
         form_data = {
-            'text': 'Test Text',
+            'text': 'Test Text Changed',
             'group': self.group.id,
         }
         response = self.authorized_client.post(
@@ -67,9 +66,10 @@ class TestFormCreate(TestCase):
         self.assertRedirects(response, reverse(
             'posts:post_detail', args=('1',)))
         self.assertEqual(Post.objects.count(), post_count)
-        self.assertTrue(
-            Post.objects.filter(
-                text='Test Text',
-                group=self.group,
-            ).exists()
-        )
+        object_post = Post.objects.get(id=1)
+        text = object_post.text
+        group = object_post.group
+        author = object_post.author.username
+        self.assertEqual(text, 'Test Text Changed')
+        self.assertEqual(group, self.group)
+        self.assertEqual(author, 'Artem')

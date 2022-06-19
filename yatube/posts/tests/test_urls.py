@@ -1,18 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
+from http import HTTPStatus
 
 from ..models import Group, Post
 
 User = get_user_model()
-
-
-class StaticURLTest(TestCase):
-    """Тест Урлов (Только главная страница!)."""
-
-    def test_homepage(self):
-        guest_client = Client()
-        response = guest_client.get("/")
-        self.assertEqual(response.status_code, 200)
 
 
 class GuestURLTest(TestCase):
@@ -23,6 +15,9 @@ class GuestURLTest(TestCase):
         """Создаём записи в БД."""
         super().setUpClass()
         cls.user = User.objects.create_user(username='Artem')
+        cls.guest = Client()
+        cls.autorized_user = Client()
+        cls.autorized_user.force_login(cls.user)
         cls.group = Group.objects.create(
             title='TestTitle',
             slug='test',
@@ -33,51 +28,64 @@ class GuestURLTest(TestCase):
             author=cls.user,
         )
 
-    def setUp(self):
-        self.guest = Client()
-        self.autorized_user = Client()
-        self.autorized_user.force_login(self.user)
+    def test_homepage_public_access(self):
+        """Тест общей доступности для пользователей главной страницы."""
+        response = self.guest.get("/")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_group_access(self):
-        """Тест для неавторизованного /group/slug."""
+    def test_group_public_access(self):
+        """Тест общей доступности для пользователей /group/slug."""
         response = self.guest.get('/group/test/')
-        self.assertEqual(response.status_code, 200, 'Страница недоступна')
+        self.assertEqual(response.status_code, HTTPStatus.OK,
+                         'Страница недоступна')
 
-    def test_profile_access(self):
-        """Тест общедоступности profile/<str:username>/."""
+    def test_profile_public_access(self):
+        """Тест общей доступности для пользователей profile/<str:username>/."""
         response = self.guest.get('/profile/Artem/')
-        self.assertEqual(response.status_code, 200, 'Страница недоступна')
+        self.assertEqual(response.status_code, HTTPStatus.OK,
+                         'Страница недоступна')
 
-    def test_post_info(self):
-        """Тест общедоступности posts/<int:post_id>/."""
+    def test_post_info_public_access(self):
+        """Тест общей доступности для пользователей posts/<int:post_id>/."""
         response = self.guest.post('/posts/1/')
-        self.assertEqual(response.status_code, 200,
+        self.assertEqual(response.status_code, HTTPStatus.OK,
                          'Страница о посте недоступна')
 
-    def test_unexisting_page(self):
-        """Тест общедоступности 404 page."""
+    def test_unexisting_page_public_access(self):
+        """Тест общей доступности для пользователей 404 page."""
         response = self.guest.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
-    def test_create(self):
+    def test_post_create_by_authorized_user(self):
         """Тест доступности create для авторизованного."""
         response = self.autorized_user.get('/create/')
-        self.assertEqual(response.status_code, 200,
+        self.assertEqual(response.status_code, HTTPStatus.OK,
                          'Страница create недоступна')
 
-    def test_create_guest(self):
+    def test_create_unavailability_by_guest(self):
         """Недоступность для гостя /create/ . (Переадресация)"""
         response = self.guest.get('/create/')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def test_edit(self):
+    def test_post_edit_by_author(self):
         """Доступность posts/<int:post_id>/edit/ для автора."""
         post = Post.objects.get(author=self.user)
         if post:
             response = self.autorized_user.get('/posts/1/edit/')
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_templates(self):
+    def test_post_edit_by_guest(self):
+        """Не доступность posts/<int:post_id>/edit/
+        для пользователя не являющегося автором."""
+        self.user_2 = User.objects.create_user(username='Darya')
+        self.user_not_author = Client()
+        self.user_not_author.force_login(self.user_2)
+        post = Post.objects.get(author=self.user)
+        if post:
+            response = self.user_not_author.get('/posts/1/edit/')
+            self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_accordance_urls_and_templates(self):
         """Проврка на соответствие урл и шаблонов"""
         url_templates_names = {
             '/': 'posts/index.html',
