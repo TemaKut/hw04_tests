@@ -78,14 +78,14 @@ class ContextView(TestCase):
         """Profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': 'Nikita'}))
-        first_obj = response.context['page_obj'].object_list[0]
-        post_text_0 = first_obj.text
-        post_author_0 = first_obj.author.username
-        post_group_0 = first_obj.group.title
-        self.assertEqual(post_text_0, 'Test text1')
-        self.assertEqual(post_author_0, 'Nikita')
-        if post_group_0:
-            self.assertEqual(post_group_0, 'Test title')
+        paje_obj = response.context['page_obj'][0]
+        post_obj = Post.objects.all()
+
+        def checklist(foo1, foo2):
+            if foo1 in foo2:
+                return True
+
+        self.assertEqual(checklist(paje_obj, post_obj,), True)
 
     def test_group_context(self):
         """Group сформирован с правильным контекстом."""
