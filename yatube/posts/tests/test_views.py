@@ -65,14 +65,14 @@ class ContextView(TestCase):
     def test_index_context(self):
         """Index сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:home'))
-        first_obj = response.context['page_obj'].object_list[0]
-        post_text_0 = first_obj.text
-        post_author_0 = first_obj.author.username
-        post_group_0 = first_obj.group.title
-        self.assertEqual(post_text_0, 'Test text1')
-        self.assertEqual(post_author_0, 'Nikita')
-        if post_group_0:
-            self.assertEqual(post_group_0, 'Test title')
+        paje_obj = response.context['page_obj'][0]
+        post_obj = Post.objects.all()
+
+        def checklist(foo1, foo2):
+            if foo1 in foo2:
+                return True
+
+        self.assertEqual(checklist(paje_obj, post_obj,), True)
 
     def test_profile_context(self):
         """Profile сформирован с правильным контекстом."""
@@ -91,25 +91,14 @@ class ContextView(TestCase):
         """Group сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse('posts:group', kwargs={'slug': 'TestSlug'}))
-        first_obj = response.context['page_obj'].object_list[0]
-        post_text_0 = first_obj.text
-        post_author_0 = first_obj.author.username
-        post_group_0 = first_obj.group.title
-        self.assertEqual(post_text_0, 'Test text1')
-        self.assertEqual(post_author_0, 'Nikita')
-        if post_group_0:
-            self.assertEqual(post_group_0, 'Test title')
+        paje_obj = response.context['page_obj'][0]
+        post_obj = Post.objects.all()
 
-    def test_index_paginator(self):
-        """Работоспособность паджинатора главной страницы."""
-        response = self.authorized_client.get(reverse('posts:home'))
-        self.assertEqual(len(response.context['page_obj']), 10)
+        def checklist(foo1, foo2):
+            if foo1 in foo2:
+                return True
 
-    def test_index_paginator_second(self):
-        """Работоспособность паджинатора главной страницы (2-я страница)."""
-        response_second = self.authorized_client.get(
-            reverse('posts:home') + '?page=2')
-        self.assertEqual(len(response_second.context['page_obj']), 5)
+        self.assertEqual(checklist(paje_obj, post_obj,), True)
 
     def test_group_list_context(self):
         """Список постов отфильтрованных по группе."""
@@ -121,36 +110,12 @@ class ContextView(TestCase):
                       + len(response_second.context['page_obj']))
         self.assertEqual(summ_posts, 13)
 
-    def test_group_list_paginator(self):
-        """Работоспособность паджинатора постов конкретной группы."""
-        response = self.authorized_client.get(
-            reverse('posts:group', kwargs={'slug': 'TestSlug'}))
-        self.assertEqual(len(response.context['page_obj']), 10)
-
-    def test_group_list_paginator_second(self):
-        """Паджинатора постов конкретной группы (2-я страница)."""
-        response_second = self.authorized_client.get(
-            reverse('posts:group', kwargs={'slug': 'TestSlug'}) + '?page=2')
-        self.assertEqual(len(response_second.context['page_obj']), 3)
-
     def test_profile_context(self):
         """Список постов отфильтрованных по пользователю Nikita."""
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': 'Nikita'}))
 
         self.assertEqual(len(response.context['page_obj']), 4)
-
-    def test_profile_paginator(self):
-        """Работоспособность паджинатора постов конкретного пользователя."""
-        response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'Artem'}))
-        self.assertEqual(len(response.context['page_obj']), 10)
-
-    def test_profile_paginator_second(self):
-        """Паджинатор постов конкретного пользователя (2-я страница)."""
-        response_second = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'Artem'}) + '?page=2')
-        self.assertEqual(len(response_second.context['page_obj']), 1)
 
     def test_post_detail_context(self):
         """Один пост отфильтрованный по id."""
@@ -197,3 +162,38 @@ class ContextView(TestCase):
         response = self.authorized_client.get(
             reverse('posts:group', kwargs={'slug': 'SecondSlug'}))
         self.assertEqual(len(response.context['page_obj']), 0)
+
+    def test_index_paginator(self):
+        """Работоспособность паджинатора главной страницы."""
+        response = self.authorized_client.get(reverse('posts:home'))
+        self.assertEqual(len(response.context['page_obj']), 10)
+
+    def test_index_paginator_second(self):
+        """Работоспособность паджинатора главной страницы (2-я страница)."""
+        response_second = self.authorized_client.get(
+            reverse('posts:home') + '?page=2')
+        self.assertEqual(len(response_second.context['page_obj']), 5)
+
+    def test_group_list_paginator(self):
+        """Работоспособность паджинатора постов конкретной группы."""
+        response = self.authorized_client.get(
+            reverse('posts:group', kwargs={'slug': 'TestSlug'}))
+        self.assertEqual(len(response.context['page_obj']), 10)
+
+    def test_group_list_paginator_second(self):
+        """Паджинатора постов конкретной группы (2-я страница)."""
+        response_second = self.authorized_client.get(
+            reverse('posts:group', kwargs={'slug': 'TestSlug'}) + '?page=2')
+        self.assertEqual(len(response_second.context['page_obj']), 3)
+
+    def test_profile_paginator(self):
+        """Работоспособность паджинатора постов конкретного пользователя."""
+        response = self.authorized_client.get(
+            reverse('posts:profile', kwargs={'username': 'Artem'}))
+        self.assertEqual(len(response.context['page_obj']), 10)
+
+    def test_profile_paginator_second(self):
+        """Паджинатор постов конкретного пользователя (2-я страница)."""
+        response_second = self.authorized_client.get(
+            reverse('posts:profile', kwargs={'username': 'Artem'}) + '?page=2')
+        self.assertEqual(len(response_second.context['page_obj']), 1)
