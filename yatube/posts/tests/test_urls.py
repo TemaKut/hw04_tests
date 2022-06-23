@@ -66,7 +66,6 @@ class GuestURLTest(TestCase):
         self.user_2 = User.objects.create_user(username='Darya')
         self.user_not_author = Client()
         self.user_not_author.force_login(self.user_2)
-        post = Post.objects.get(author=self.user)
         response = self.user_not_author.get('/posts/1/edit/')
         self.assertRedirects(response, '/posts/1/', HTTPStatus.FOUND)
 

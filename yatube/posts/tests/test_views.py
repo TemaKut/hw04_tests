@@ -41,7 +41,8 @@ class TestPostViews(TestCase):
         """URL использует нужный шаблон."""
         url_templates = {reverse(self.index): 'posts/index.html',
                          reverse(self.create): 'posts/create_post.html',
-                         reverse(self.group_post, kwargs={'slug': 'test_slug'}):
+                         reverse(self.group_post,
+                                 kwargs={'slug': 'test_slug'}):
                          'posts/group_list.html',
                          reverse(self.profile, kwargs={'username': 'Artem'}):
                          'posts/profile.html',
