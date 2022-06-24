@@ -151,11 +151,12 @@ class TestPostViews(TestCase):
     def test_paginators(self):
         """Выводится правильное количество постов."""
         for i in range(NUM_PAGE + TEST_PAGE_2 - 1):
-            self.post = Post.objects.create(
-                author=self.author,
-                text=f'Тестовый пост {i}',
-                group=self.group,
-            )
+            self.post = Post.objects.bulk_create([
+                Post(author=self.author,
+                     text=f'Тестовый пост {i}',
+                     group=self.group,
+                     )
+            ])
 
         responses = (self.client.get(reverse(self.index)),
                      self.client.get(reverse(
