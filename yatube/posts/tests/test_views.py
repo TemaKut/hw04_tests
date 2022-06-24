@@ -5,6 +5,7 @@ from django import forms
 from django.core.cache import cache
 
 from posts.models import Post, Group
+from posts.constants import NUM_PAGE, TEST_PAGE_2
 
 
 User = get_user_model()
@@ -55,34 +56,49 @@ class TestPostViews(TestCase):
         for reverse_name, template in url_templates.items():
             with self.subTest(template=template):
                 response = self.author_client.get(reverse_name)
-                self.assertTemplateUsed(response, template,)
+                self.assertTemplateUsed(response, template)
 
     def test_index_context(self):
         """Шаблон index с правильным контекстом."""
         response = self.client.get(reverse(self.index))
         first_obj = response.context['page_obj'].object_list[0]
-        self.assertEqual(first_obj, self.post,)
+        self.assertEqual(first_obj.id, self.post.id)
+        self.assertEqual(first_obj.text, self.post.text)
+        self.assertEqual(first_obj.group, self.post.group)
+        self.assertEqual(first_obj.author.username, self.post.author.username)
 
     def test_group_posts_context(self):
         """Шаблон group_list с правильным контекстом."""
         response = self.client.get(reverse(
             self.group_post, kwargs={'slug': 'test_slug'}))
         first_obj = response.context['page_obj'].object_list[0]
-        self.assertEqual(first_obj, self.post,)
+        self.assertEqual(first_obj.id, self.post.id)
+        self.assertEqual(first_obj.text, self.post.text)
+        self.assertEqual(first_obj.group.title, self.post.group.title)
+        self.assertEqual(first_obj.group.slug, self.post.group.slug)
+        self.assertEqual(first_obj.group.description,
+                         self.post.group.description)
+        self.assertEqual(first_obj.author.username, self.post.author.username)
 
     def test_profile_context(self):
         """Шаблон profile с правильным контекстом."""
         response = self.client.get(reverse(
             self.profile, kwargs={'username': 'Artem'}))
         first_obj = response.context['page_obj'].object_list[0]
-        self.assertEqual(first_obj, self.post,)
+        self.assertEqual(first_obj.id, self.post.id)
+        self.assertEqual(first_obj.text, self.post.text)
+        self.assertEqual(first_obj.group, self.post.group)
+        self.assertEqual(first_obj.author.username, self.post.author.username)
 
     def test_post_detail_context(self):
         """Шаблон post_detail  с правильным контекстом."""
         response = self.client.get(
             reverse(self.post_id, kwargs={'post_id': TestPostViews.post.pk}))
         first_obj = response.context['post_valid']
-        self.assertEqual(first_obj, self.post,)
+        self.assertEqual(first_obj.id, self.post.id)
+        self.assertEqual(first_obj.text, self.post.text)
+        self.assertEqual(first_obj.group, self.post.group)
+        self.assertEqual(first_obj.author.username, self.post.author.username)
 
     def test_create_context(self):
         """Шаблон post_create с правильным контекстом."""
@@ -92,7 +108,7 @@ class TestPostViews(TestCase):
         for field, field_type in form_fields.items():
             with self.subTest(field=field):
                 form_field = response.context['form'].fields[field]
-                self.assertIsInstance(form_field, field_type,)
+                self.assertIsInstance(form_field, field_type)
 
     def test_post_edit_context(self):
         """Шаблон post_edit  с правильным контекстом."""
@@ -103,7 +119,7 @@ class TestPostViews(TestCase):
         for field, field_type in form_fields.items():
             with self.subTest(field=field):
                 form_field = response.context['form'].fields[field]
-                self.assertIsInstance(form_field, field_type,)
+                self.assertIsInstance(form_field, field_type)
 
     def test_new_post_in_pages(self):
         """Пост не попадает в ненужную группу."""
@@ -113,7 +129,7 @@ class TestPostViews(TestCase):
             description='Не та группа')
         response = self.client.get(reverse(
             self.group_post, kwargs={'slug': 'wrong'}))
-        self.assertEqual(response.context['page_obj'].paginator.count, 0,)
+        self.assertEqual(response.context['page_obj'].paginator.count, 0)
         Post.objects.create(
             author=TestPostViews.author,
             text='Тестовый пост для тестирования неверной группы',
@@ -121,7 +137,7 @@ class TestPostViews(TestCase):
         cache.clear()
         response = self.client.get(reverse(
             self.group_post, kwargs={'slug': 'wrong'}))
-        self.assertEqual(response.context['page_obj'].paginator.count, 0,)
+        self.assertEqual(response.context['page_obj'].paginator.count, 0)
         responses = (self.client.get(reverse(self.index)),
                      self.client.get(reverse(
                          self.group_post, kwargs={'slug': 'test_slug'})),
@@ -130,15 +146,16 @@ class TestPostViews(TestCase):
         for response in responses:
             with self.subTest(response=response):
                 self.assertEqual(response.context['page_obj'].paginator.count,
-                                 2,)
+                                 2)
 
     def test_paginators(self):
         """Выводится правильное количество постов."""
-        for i in range(15):
+        for i in range(NUM_PAGE + TEST_PAGE_2 - 1):
             self.post = Post.objects.create(
                 author=self.author,
-                text=(f'Тестовый пост {i}'),
-                group=self.group)
+                text=f'Тестовый пост {i}',
+                group=self.group,
+            )
 
         responses = (self.client.get(reverse(self.index)),
                      self.client.get(reverse(
@@ -151,7 +168,7 @@ class TestPostViews(TestCase):
         for response in responses:
             with self.subTest(response=response):
                 self.assertEqual(len(response.context['page_obj'].object_list),
-                                 10,)
+                                 NUM_PAGE)
 
         responses = (self.client.get(reverse(self.index) + '?page=2'),
                      self.client.get(reverse(
@@ -164,4 +181,4 @@ class TestPostViews(TestCase):
         for response in responses:
             with self.subTest(response=response):
                 self.assertEqual(len(response.context['page_obj'].object_list),
-                                 6,)
+                                 TEST_PAGE_2)
