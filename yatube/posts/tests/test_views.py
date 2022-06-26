@@ -11,6 +11,13 @@ from posts.constants import NUM_PAGE, TEST_PAGE_2
 User = get_user_model()
 
 
+def check(self, obj_1, obj_2):
+    self.assertEqual(obj_1.id, obj_2.id)
+    self.assertEqual(obj_1.text, obj_2.text)
+    self.assertEqual(obj_1.group, obj_2.group)
+    self.assertEqual(obj_1.author.username, obj_2.author.username)
+
+
 class TestPostViews(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -62,10 +69,8 @@ class TestPostViews(TestCase):
         """Шаблон index с правильным контекстом."""
         response = self.client.get(reverse(self.index))
         first_obj = response.context['page_obj'].object_list[0]
-        self.assertEqual(first_obj.id, self.post.id)
-        self.assertEqual(first_obj.text, self.post.text)
-        self.assertEqual(first_obj.group, self.post.group)
-        self.assertEqual(first_obj.author.username, self.post.author.username)
+        obj_2 = self.post
+        check(self, first_obj, obj_2)
 
     def test_group_posts_context(self):
         """Шаблон group_list с правильным контекстом."""
@@ -85,20 +90,16 @@ class TestPostViews(TestCase):
         response = self.client.get(reverse(
             self.profile, kwargs={'username': 'Artem'}))
         first_obj = response.context['page_obj'].object_list[0]
-        self.assertEqual(first_obj.id, self.post.id)
-        self.assertEqual(first_obj.text, self.post.text)
-        self.assertEqual(first_obj.group, self.post.group)
-        self.assertEqual(first_obj.author.username, self.post.author.username)
+        obj_2 = self.post
+        check(self, first_obj, obj_2)
 
     def test_post_detail_context(self):
         """Шаблон post_detail  с правильным контекстом."""
         response = self.client.get(
             reverse(self.post_id, kwargs={'post_id': TestPostViews.post.pk}))
         first_obj = response.context['post_valid']
-        self.assertEqual(first_obj.id, self.post.id)
-        self.assertEqual(first_obj.text, self.post.text)
-        self.assertEqual(first_obj.group, self.post.group)
-        self.assertEqual(first_obj.author.username, self.post.author.username)
+        obj_2 = self.post
+        check(self, first_obj, obj_2)
 
     def test_create_context(self):
         """Шаблон post_create с правильным контекстом."""
@@ -150,13 +151,14 @@ class TestPostViews(TestCase):
 
     def test_paginators(self):
         """Выводится правильное количество постов."""
-        for i in range(NUM_PAGE + TEST_PAGE_2 - 1):
-            self.post = Post.objects.bulk_create([
-                Post(author=self.author,
-                     text=f'Тестовый пост {i}',
-                     group=self.group,
-                     )
-            ])
+        postss = (
+            (Post(author=self.author,
+                  text=f'Тестовый пост {i}',
+                  group=self.group,
+                  ))for i in range(NUM_PAGE + TEST_PAGE_2 - 1)
+        )
+
+        self.post = Post.objects.bulk_create(list(postss))
 
         responses = (self.client.get(reverse(self.index)),
                      self.client.get(reverse(
