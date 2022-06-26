@@ -15,8 +15,6 @@ class GuestURLTest(TestCase):
         """Создаём записи в БД."""
         super().setUpClass()
         cls.user = User.objects.create_user(username='Artem')
-        cls.autorized_user = Client()
-        cls.autorized_user.force_login(cls.user)
         cls.group = Group.objects.create(
             title='TestTitle',
             slug='test',
@@ -26,6 +24,10 @@ class GuestURLTest(TestCase):
             text='TestText',
             author=cls.user,
         )
+
+    def setUp(self):
+        self.autorized_user = Client()
+        self.autorized_user.force_login(self.user)
 
     def test_public_access_url(self):
         """Проврка общей доступности url для гостевого пользователя."""
@@ -54,11 +56,17 @@ class GuestURLTest(TestCase):
                 response = self.autorized_user.get(url)
                 self.assertEqual(response.status_code, status)
 
-    def test_create_unavailability_by_guest(self):
-        """Недоступность для гостя /create/ . (Переадресация)"""
-        response = self.client.get('/create/')
-        self.assertRedirects(
-            response, '/auth/login/?next=%2Fcreate%2F', HTTPStatus.FOUND)
+    def test_create_edit_unavailability_by_guest(self):
+        """Недоступность для гостя (Переадресация)."""
+        response = {
+            '/create/': '/auth/login/?next=%2Fcreate%2F',
+            '/posts/1/edit/': '/auth/login/?next=%2Fposts%2F1%2Fedit%2F',
+        }
+        for get, redirect in response.items():
+            with self.subTest(redirect=redirect):
+                resp = self.client.get(get)
+                self.assertRedirects(
+                    resp, redirect, HTTPStatus.FOUND)
 
     def test_post_edit_by_guest(self):
         """Не доступность posts/<int:post_id>/edit/
