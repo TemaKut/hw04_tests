@@ -11,13 +11,6 @@ from posts.constants import NUM_PAGE, TEST_PAGE_2
 User = get_user_model()
 
 
-def check(self, obj_1, obj_2):
-    self.assertEqual(obj_1.id, obj_2.id)
-    self.assertEqual(obj_1.text, obj_2.text)
-    self.assertEqual(obj_1.group, obj_2.group)
-    self.assertEqual(obj_1.author.username, obj_2.author.username)
-
-
 class TestPostViews(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -45,6 +38,13 @@ class TestPostViews(TestCase):
         self.authorized_client.force_login(self.user)
         self.author_client.force_login(self.author)
 
+    def check(self, obj_1):
+        obj_2 = self.post
+        self.assertEqual(obj_1.id, obj_2.id)
+        self.assertEqual(obj_1.text, obj_2.text)
+        self.assertEqual(obj_1.group, obj_2.group)
+        self.assertEqual(obj_1.author.username, obj_2.author.username)
+
     def test_correct_templates(self):
         """URL использует нужный шаблон."""
         url_templates = {reverse(self.index): 'posts/index.html',
@@ -69,37 +69,28 @@ class TestPostViews(TestCase):
         """Шаблон index с правильным контекстом."""
         response = self.client.get(reverse(self.index))
         first_obj = response.context['page_obj'].object_list[0]
-        obj_2 = self.post
-        check(self, first_obj, obj_2)
+        self.check(first_obj)
 
     def test_group_posts_context(self):
         """Шаблон group_list с правильным контекстом."""
         response = self.client.get(reverse(
             self.group_post, kwargs={'slug': 'test_slug'}))
         first_obj = response.context['page_obj'].object_list[0]
-        self.assertEqual(first_obj.id, self.post.id)
-        self.assertEqual(first_obj.text, self.post.text)
-        self.assertEqual(first_obj.group.title, self.post.group.title)
-        self.assertEqual(first_obj.group.slug, self.post.group.slug)
-        self.assertEqual(first_obj.group.description,
-                         self.post.group.description)
-        self.assertEqual(first_obj.author.username, self.post.author.username)
+        self.check(first_obj)
 
     def test_profile_context(self):
         """Шаблон profile с правильным контекстом."""
         response = self.client.get(reverse(
             self.profile, kwargs={'username': 'Artem'}))
         first_obj = response.context['page_obj'].object_list[0]
-        obj_2 = self.post
-        check(self, first_obj, obj_2)
+        self.check(first_obj)  # Объект автора проверяется в функции
 
     def test_post_detail_context(self):
         """Шаблон post_detail  с правильным контекстом."""
         response = self.client.get(
             reverse(self.post_id, kwargs={'post_id': TestPostViews.post.pk}))
         first_obj = response.context['post_valid']
-        obj_2 = self.post
-        check(self, first_obj, obj_2)
+        self.check(first_obj)
 
     def test_create_context(self):
         """Шаблон post_create с правильным контекстом."""
