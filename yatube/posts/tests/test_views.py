@@ -38,7 +38,10 @@ class TestPostViews(TestCase):
         self.authorized_client.force_login(self.user)
         self.author_client.force_login(self.author)
 
-    def check(self, obj_1):
+    def check_add_post_in_context(self, obj_1):
+        """Этот метод проверяет на соответствие
+        объекты поста в БД и соответствующем контексте. на входе необходимо
+        указать объект из БД а так же объект из контекста view."""
         obj_2 = self.post
         self.assertEqual(obj_1.id, obj_2.id)
         self.assertEqual(obj_1.text, obj_2.text)
@@ -69,28 +72,32 @@ class TestPostViews(TestCase):
         """Шаблон index с правильным контекстом."""
         response = self.client.get(reverse(self.index))
         first_obj = response.context['page_obj'].object_list[0]
-        self.check(first_obj)
+        self.check_add_post_in_context(first_obj)
 
     def test_group_posts_context(self):
         """Шаблон group_list с правильным контекстом."""
         response = self.client.get(reverse(
             self.group_post, kwargs={'slug': 'test_slug'}))
         first_obj = response.context['page_obj'].object_list[0]
-        self.check(first_obj)
+        self.check_add_post_in_context(first_obj)
+        context_group = response.context['group']
+        self.assertEqual(context_group.slug, 'test_slug')
 
     def test_profile_context(self):
         """Шаблон profile с правильным контекстом."""
         response = self.client.get(reverse(
             self.profile, kwargs={'username': 'Artem'}))
         first_obj = response.context['page_obj'].object_list[0]
-        self.check(first_obj)  # Объект автора проверяется в функции
+        self.check_add_post_in_context(first_obj)
+        author = response.context['author']
+        self.assertEqual(author.username, 'Artem')
 
     def test_post_detail_context(self):
         """Шаблон post_detail  с правильным контекстом."""
         response = self.client.get(
             reverse(self.post_id, kwargs={'post_id': TestPostViews.post.pk}))
         first_obj = response.context['post_valid']
-        self.check(first_obj)
+        self.check_add_post_in_context(first_obj)
 
     def test_create_context(self):
         """Шаблон post_create с правильным контекстом."""
